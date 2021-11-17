@@ -7,8 +7,9 @@ Created on Tue Nov 16 19:51:20 2021
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
 
-def Gradient_Descent(gradient, A, b, init, learn_rate, n_iter, tolerance = 1e-06, dtype = "float64"): 
+def Gradient_Descent(gradient, A, b, real_value, init, learn_rate, n_iter, tolerance = 1e-06, dtype = "float64"): 
     """
     * gradient: the gradient function
     * A: observation input
@@ -30,7 +31,7 @@ def Gradient_Descent(gradient, A, b, init, learn_rate, n_iter, tolerance = 1e-06
         raise ValueError("'A' and 'b' lengths do not match.")
         
     # Initialising the value of the parameters
-    vector = np.array(init, dtype = dtype_)
+    x_hat = np.array(init, dtype = dtype_)
     
     # Initialising and checking the learning rate
     learn_rate = np.array(learn_rate, dtype = dtype_)
@@ -47,21 +48,34 @@ def Gradient_Descent(gradient, A, b, init, learn_rate, n_iter, tolerance = 1e-06
     if np.any(tolerance <= 0):
         raise ValueError("'tolerance' must be greater than 0.")
         
+    # Initialise breaking condition
+    n_accept = 0
+        
+    # Visualisation
+    error_array = []
+        
     # Gradient descent loop
     for _ in range(n_iter):
         print("iteration {}".format(_))
         # Calculating the descent value
-        diff = learn_rate * np.array(gradient(A, b, vector), dtype = dtype_)
+        diff = learn_rate * np.array(gradient(A, b, x_hat), dtype = dtype_)
         #print(diff.shape)
         
         # Checking the convergence
         if np.all(np.abs(diff) <= tolerance):
+            n_accept += 1
+        else:
+            n_accept = 0
+            
+        if n_accept >= 10:
             break
         
         # Update the parameter estimation
-        vector -= diff
+        x_hat -= diff
+        error_array.append(np.linalg.norm(real_value -x_hat))
         
-    return vector if vector.shape else vector.item()
+    plt.plot(error_array)
+    return x_hat if x_hat.shape else x_hat.item()
 
 def LS_Gradient(A, b, vector):
     """
@@ -75,21 +89,27 @@ def LS_Gradient(A, b, vector):
     #print(gd.shape)
     return gd
 
+def Pseudo_Inverse(A, b):
+    x_hat = np.matmul(np.matmul(np.linalg.inv(np.matmul(A.transpose(),A)), A.transpose()), b)
+    return x_hat
+
 # Generate true answer 
 mu, sigma = 0, 1
-n, m = 50, 200
-x = np.random.normal(mu, sigma, n)
+n, m = 1000, 200
+x_bar = np.random.normal(mu, sigma, n)
 
 # Randomly generate A
 A = np.random.normal(mu, sigma, size = (m, n))
 
 # Calculate b
-b = np.matmul(A, x)
+b = np.matmul(A, x_bar)
 sigma2 = n/40
 b += np.random.normal(0, sigma2, m)
 
 # initialise vector
 x0 = np.zeros((n,))
 
-r = Gradient_Descent(LS_Gradient,A, b, x0, 0.003, 500)
-print(np.linalg.norm(x-r))
+x_hat = Gradient_Descent(LS_Gradient,A, b, x_bar, x0, 0.0001, 500)
+r = Pseudo_Inverse(A, b)
+print(np.linalg.norm(x_bar-x_hat))
+print(np.linalg.norm(x_hat - r))
