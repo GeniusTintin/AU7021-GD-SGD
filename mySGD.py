@@ -31,7 +31,7 @@ def SGD(gradient, A, b, real_answer, init, learn_rate, n_iter, batch_size = 1, r
     if n_training != b.shape[0]:
         raise ValueError("'A' and 'b' lengths do not match.")
     
-    # concadinate Ab
+    # Concatenating Ab
     Ab = np.c_[A.reshape(n_training, -1), b.reshape(n_training, 1)]
         
     # Initialising the value of the parameters
@@ -61,7 +61,7 @@ def SGD(gradient, A, b, real_answer, init, learn_rate, n_iter, batch_size = 1, r
     if np.any(tolerance <= 0):
         raise ValueError("'tolerance' must be greater than 0.")
         
-    # Initialise breaking condition
+    # Initialising breaking condition
     n_accept = 0
     
     # Visualisation data
@@ -126,7 +126,7 @@ def Pseudo_Inverse(A, b):
 # Generate true answer 
 mu, sigma = 0, 1
 #n_seq, m = [50, 300, 500, 1000, 2000], 200
-n_seq, m = [ 50], 200
+n_seq, m = [300, 500, 1000, 2000], 200
 
 # Solving the problem with different n
 for n in n_seq:
@@ -141,13 +141,13 @@ for n in n_seq:
     b += np.random.normal(0, sigma2, m)
 
     # initialise vector
-    x0 = 0 * np.ones((n,))
+    #x0 = 10 * np.ones((n,))
     # Random init
-    #x0 = np.random.normal(mu, sigma, size = (n,))
+    x0 = np.random.normal(mu, sigma, size = (n,))
     #print(x0)
 
     # Use Stochastic Gradient Descent to calculate x_hat
-    x_hat = SGD(LS_Gradient, A, b, x_bar, x0, 0.0005, 1e4, batch_size=100, tolerance=1e-06 )
+    x_hat = SGD(LS_Gradient, A, b, x_bar, x0, 0.0005, 1e4, batch_size=20, tolerance=1e-06 )
     print("||x_hat-x_bar|| = {}".format(np.linalg.norm(x_bar-x_hat)))
     
 # Result of Pseudo Inverse
