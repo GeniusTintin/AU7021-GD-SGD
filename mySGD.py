@@ -41,18 +41,22 @@ def SGD(gradient, A, b, real_answer, init, learn_rate, n_iter, batch_size = 1, r
     seed = None if random_state is None else int(random_state)
     random_number_generator = np.random.default_rng(seed = seed)
     
+    # Initialising the learning rate
     learn_rate = np.array(learn_rate, dtype = dtype_)
     if np.any(learn_rate <= 0):
         raise ValueError("'learn_rate' must be greater than 0.")
         
+    # Inisitlising the batch size
     batch_size = int(batch_size)
     if not (batch_size > 0 and batch_size <= n_training):
         raise ValueError("'batch_size' must be greater than 0, and less than or equal to the number of training samples.")
         
+    # Initialising the n_iter
     n_iter = int(n_iter)
     if n_iter <= 0:
         raise ValueError("'n_iter' must be greater than 0.")
         
+    # Initialising the tolerance for convergence
     tolerance = np.array(tolerance, dtype = dtype_)
     if np.any(tolerance <= 0):
         raise ValueError("'tolerance' must be greater than 0.")
@@ -60,8 +64,9 @@ def SGD(gradient, A, b, real_answer, init, learn_rate, n_iter, batch_size = 1, r
     # Initialise breaking condition
     n_accept = 0
     
-    # Visualisation
+    # Visualisation data
     error_array = []
+    diff_array = []
         
     # Performance Stochastic Gradient Descent loop
     for _ in range(n_iter):
@@ -76,68 +81,75 @@ def SGD(gradient, A, b, real_answer, init, learn_rate, n_iter, batch_size = 1, r
             stop = start + batch_size
             A_batch, b_batch = Ab[start:stop, :-1], Ab[start:stop, -1:]
             b_batch = b_batch.ravel()
-            #print(A_batch.shape, b_batch.shape)
+
             grad = np.array(gradient(A_batch, b_batch, x_hat), dtype = dtype_)
             diff = learn_rate * grad
-            #print(diff.shape, grad.shape)
             
+            # Falling in the acceptance range 10 time to stop
             if np.all(np.abs(diff) <= tolerance):
                 n_accept += 1
                 break
             else:
                 n_accept = 0
-                #print(np.max(diff))
             
             x_hat -= diff
             error_array.append(np.linalg.norm(real_answer - x_hat))
+            diff_array.append(np.linalg.norm(diff))
     
-    plt.plot(error_array)
+    # Visualisation process
+    fig, (axs1, axs2) = plt.subplots(1, 2)
+    axs1.plot(np.array(error_array), 'go-', markersize = 3)
+    axs2.plot(np.array(diff_array), 'o-', markersize = 3)
+    axs1.grid(); axs2.grid()
+    axs1.set_xlabel("Iterations"); axs2.set_xlabel("Iterations")
+    axs1.set_ylabel("Cost error"); axs2.set_ylabel("Step length")
+    axs1.set_title("$\||x^k-\\bar{x}\||$"); axs2.set_title("Step length over iterations")
+    fig.suptitle("learning rate = {}, n = {}, batch size = {}".format(learn_rate, A.shape[1], batch_size))
+    fig.set_size_inches(10, 4.5)
     return x_hat if x_hat.shape else x_hat.item()
 
-
+# The gradient function of Least Square problem
 def LS_Gradient(A, b, vector):
     """
     * A: input least square observation matrix
     * b: observation value
     * vector: parameter value
     """
-    #print(vector.shape, b.shape, A.shape)
     gd = np.matmul(np.matmul(np.transpose(A), A), vector) - np.matmul(np.transpose(A), b)
-    #gd=np.matmul(A.transpose(),np.matmul(A,vector)-b)
-    #print(gd.shape)
     return gd
 
-def Pseudo_Inverse_legend(A,b):
-    x_hat = np.matmul(np.matmul(A.transpose(),np.linalg.inv(np.matmul(A,A.transpose()))),b)
-    # x_hat = 
-    return x_hat
-
+# Function of Pseudo Inverse
 def Pseudo_Inverse(A, b):
     x_hat = np.matmul(np.matmul(np.linalg.inv(np.matmul(A.transpose(),A)), A.transpose()), b)
     return x_hat
 
 # Generate true answer 
 mu, sigma = 0, 1
-n_seq, m = [50, 300, 500, 1000, 2000], 200
-n = n_seq[3]
-x_bar = np.random.normal(mu, sigma, n)
+#n_seq, m = [50, 300, 500, 1000, 2000], 200
+n_seq, m = [ 50], 200
 
-# Randomly generate A
-A = np.random.normal(mu, sigma, size = (m, n))
+# Solving the problem with different n
+for n in n_seq:
+    x_bar = np.random.normal(mu, sigma, n)
 
-# Calculate b
-b = np.matmul(A, x_bar)
-sigma2 = n/40
-b += np.random.normal(0, sigma2, m)
+    # Randomly generate A
+    A = np.random.normal(mu, sigma, size = (m, n))
 
-# initialise vector
-x0 = np.zeros((n,))
-# Random init
-#x0 = np.random.normal(mu, sigma, size = (n,))
-#print(x0)
+    # Calculate b
+    b = np.matmul(A, x_bar)
+    sigma2 = n/40
+    b += np.random.normal(0, sigma2, m)
 
-x_hat = SGD(LS_Gradient, A, b, x_bar, x0, 0.001, 500, batch_size=1, tolerance=1e-06 )
+    # initialise vector
+    x0 = 0 * np.ones((n,))
+    # Random init
+    #x0 = np.random.normal(mu, sigma, size = (n,))
+    #print(x0)
+
+    # Use Stochastic Gradient Descent to calculate x_hat
+    x_hat = SGD(LS_Gradient, A, b, x_bar, x0, 0.0005, 1e4, batch_size=100, tolerance=1e-06 )
+    print("||x_hat-x_bar|| = {}".format(np.linalg.norm(x_bar-x_hat)))
+    
+# Result of Pseudo Inverse
 r = Pseudo_Inverse(A, b)
-print(np.linalg.norm(x_bar-x_hat))
-print(np.linalg.norm(x_hat-r))
-#plt.plot(error_array)
+print("||x_hat - r|| = {}".format(np.linalg.norm(x_hat-r)))
