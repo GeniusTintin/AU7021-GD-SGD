@@ -54,6 +54,7 @@ def Gradient_Descent(gradient, A, b, real_value, init, learn_rate, n_iter, toler
     # Visualisation data
     error_array = []
     diff_array = []
+    objective_array = []
         
     # Gradient Descent loop
     for _ in range(n_iter):
@@ -75,17 +76,21 @@ def Gradient_Descent(gradient, A, b, real_value, init, learn_rate, n_iter, toler
         x_hat -= diff
         error_array.append(np.linalg.norm(real_value -x_hat))
         diff_array.append(np.linalg.norm(diff))
+        objective_array.append(np.linalg.norm(np.matmul(A,x_hat) - b))
         
     # Visualisation process
-    fig, (axs1, axs2) = plt.subplots(1, 2)
+    fig, (axs1, axs2,axs3) = plt.subplots(1, 3)
     axs1.plot(np.array(error_array), 'go-', markersize = 3)
     axs2.plot(np.array(diff_array), 'o-', markersize = 3)
-    axs1.grid(); axs2.grid()
-    axs1.set_xlabel("Iterations"); axs2.set_xlabel("Iterations")
-    axs1.set_ylabel("Cost error"); axs2.set_ylabel("Step length")
-    axs1.set_title("$\||x^k-\\bar{x}\||$"); axs2.set_title("Step length over iterations")
+    axs3.plot(np.array(objective_array),'yo-', markersize = 3)
+
+    axs1.grid(); axs2.grid(); axs3.grid();
+    axs1.set_xlabel("Iterations"); axs2.set_xlabel("Iterations"); axs3.set_xlabel("Iterations")
+    axs1.set_ylabel("Cost error"); axs2.set_ylabel("Step length"); axs3.set_ylabel("Objective value")
+    axs1.set_title("$\||x^k-\\bar{x}\||$"); axs2.set_title("Step length over iterations"); axs3.set_title("Objective value over iterations")
     fig.suptitle("learning rate = {}".format(learn_rate))
-    fig.set_size_inches(10, 4.5)
+    fig.set_size_inches(15, 4.5)
+    plt.show()
     # fig.savefig('test.png', dpi=100)
     
     return x_hat if x_hat.shape else x_hat.item()
@@ -125,7 +130,7 @@ b += np.random.normal(0, sigma2, m)
 x0 = np.zeros((n,))
 
 # Use Gradient Descent to calculate x_hat
-x_hat = Gradient_Descent(LS_Gradient,A, b, x_bar, x0, 0.005, 500)
+x_hat = Gradient_Descent(LS_Gradient,A, b, x_bar, x0, 0.001, 1e4)
 # Result of Pseudo Inverse
 r = Pseudo_Inverse(A, b)
 
