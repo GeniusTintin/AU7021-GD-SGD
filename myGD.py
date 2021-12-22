@@ -78,22 +78,10 @@ def Gradient_Descent(gradient, A, b, real_value, init, learn_rate, n_iter, toler
         diff_array.append(np.linalg.norm(diff))
         objective_array.append(np.linalg.norm(np.matmul(A,x_hat) - b))
         
-    # Visualisation process
-    fig, (axs1, axs2,axs3) = plt.subplots(1, 3)
-    axs1.plot(np.array(error_array), 'go-', markersize = 3)
-    axs2.plot(np.array(diff_array), 'o-', markersize = 3)
-    axs3.plot(np.array(objective_array),'yo-', markersize = 3)
-
-    axs1.grid(); axs2.grid(); axs3.grid();
-    axs1.set_xlabel("Iterations"); axs2.set_xlabel("Iterations"); axs3.set_xlabel("Iterations")
-    axs1.set_ylabel("Cost error"); axs2.set_ylabel("Step length"); axs3.set_ylabel("Objective value")
-    axs1.set_title("$\||x^k-\\bar{x}\||$"); axs2.set_title("Step length over iterations"); axs3.set_title("Objective value over iterations")
-    fig.suptitle("learning rate = {}".format(learn_rate))
-    fig.set_size_inches(15, 4.5)
-    plt.show()
+    
     # fig.savefig('test.png', dpi=100)
     
-    return x_hat if x_hat.shape else x_hat.item()
+    return x_hat, error_array, diff_array, objective_array
 
 # The gradient function of Least Square problem
 def LS_Gradient(A, b, vector):
@@ -116,6 +104,9 @@ def Pseudo_Inverse(A, b):
 # Generate true answer 
 mu, sigma = 0, 1
 n, m = 50, 200
+
+learn_rate = 0.005
+
 x_bar = np.random.normal(mu, sigma, n)
 
 # Randomly generate A
@@ -130,9 +121,31 @@ b += np.random.normal(0, sigma2, m)
 x0 = np.zeros((n,))
 
 # Use Gradient Descent to calculate x_hat
-x_hat = Gradient_Descent(LS_Gradient,A, b, x_bar, x0, 0.001, 1e4)
+x_hat, error_array, diff_array, objective_array = Gradient_Descent(LS_Gradient,A, b, x_bar, x0, learn_rate, 1e4)
 # Result of Pseudo Inverse
 r = Pseudo_Inverse(A, b)
+
+# Visualisation process
+fig = plt.figure()
+axs1 = fig.add_subplot(2,3,1)
+axs2 = fig.add_subplot(2,3,2)
+axs3 = fig.add_subplot(2,3,3)
+axs4 = fig.add_subplot(2,3,(4,6))
+
+axs1.plot(np.array(error_array), 'go-', markersize = 3)
+axs2.plot(np.array(diff_array), 'o-', markersize = 3)
+axs3.plot(np.array(objective_array),'yo-', markersize = 3)
+axs4.plot(x_bar,'go-',markersize = 3, label='ground-truth')
+axs4.plot(r,'co-',markersize = 5, label='pseudo inverse')
+axs4.plot(x_hat,'ro-',markersize = 3, label = 'GD')
+axs4.legend()
+axs1.grid(); axs2.grid(); axs3.grid(); axs4.grid()
+axs1.set_xlabel("Iterations"); axs2.set_xlabel("Iterations"); axs3.set_xlabel("Iterations"); axs4.set_xlabel("Samples")
+axs1.set_ylabel("Cost error"); axs2.set_ylabel("Step length"); axs3.set_ylabel("Objective value"); axs4.set_ylabel("Parameter Values")
+axs1.set_title("$\||x^k-\\bar{x}\||$"); axs2.set_title("Step length over iterations"); axs3.set_title("Objective value over iterations")
+fig.suptitle("learning rate = {}".format(learn_rate))
+fig.set_size_inches(15, 8)
+plt.show()
 
 # Print the estimation root square error and the root square error w.r.t. pseudo inverse
 print(np.linalg.norm(x_bar-x_hat))

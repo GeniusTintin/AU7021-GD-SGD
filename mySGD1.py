@@ -98,20 +98,8 @@ def SGD(gradient, A, b, real_answer, init, learn_rate, n_iter, batch_size = 1, r
             diff_array.append(np.linalg.norm(diff))
             objective_array.append(np.linalg.norm(np.matmul(A,x_hat) - b))
     
-    # Visualisation process
-    fig, (axs1, axs2,axs3) = plt.subplots(1, 3)
-    axs1.plot(np.array(error_array), 'go-', markersize = 3)
-    axs2.plot(np.array(diff_array), 'o-', markersize = 3)
-    axs3.plot(np.array(objective_array),'yo-', markersize = 3)
-
-    axs1.grid(); axs2.grid(); axs3.grid();
-    axs1.set_xlabel("Iterations"); axs2.set_xlabel("Iterations"); axs3.set_xlabel("Iterations")
-    axs1.set_ylabel("Cost error"); axs2.set_ylabel("Step length"); axs3.set_ylabel("Objective value")
-    axs1.set_title("$\||x^k-\\bar{x}\||$"); axs2.set_title("Step length over iterations"); axs3.set_title("Objective value over iterations")
-    fig.suptitle("learning rate = {}, n = {}, batch size = {}".format(learn_rate, A.shape[1], batch_size))
-    fig.set_size_inches(15, 4.5)
-    plt.show()
-    return x_hat if x_hat.shape else x_hat.item()
+    return x_hat, diff_array, error_array, objective_array 
+    #if x_hat.shape else x_hat.item(), diff_array, error_array, objective_array
 
 # The gradient function of Least Square problem
 def LS_Gradient(A, b, vector):
@@ -127,6 +115,10 @@ def LS_Gradient(A, b, vector):
 def Pseudo_Inverse(A, b):
     x_hat = np.matmul(np.matmul(np.linalg.inv(np.matmul(A.transpose(),A)), A.transpose()), b)
     return x_hat
+
+def Pseudo_Inverse2(A,b):
+    xhat = np.matmul(A.transpose(),np.matmul(np.linalg.inv(np.matmul(A,A.transpose())),b))
+    return xhat
 
 # Generate true answer 
 mu, sigma = 0, 1
@@ -146,15 +138,43 @@ for n in n_seq:
     b += np.random.normal(0, sigma2, m)
 
     # initialise vector
-    x0 = 10 * np.ones((n,))
+    #x0 = 5 * np.ones((n,))
     # Random init
-    #x0 = np.random.normal(mu, sigma, size = (n,))
+    x0 = np.random.normal(mu, sigma, size = (n,))
     #print(x0)
+    
+    learn_rate = 0.0005
+    batch_size = 20
 
     # Use Stochastic Gradient Descent to calculate x_hat
-    x_hat = SGD(LS_Gradient, A, b, x_bar, x0, 0.0005, 1e4, batch_size=20, tolerance=1e-06 )
+    x_hat, diff_array, error_array, objective_array = SGD(LS_Gradient, A, b, x_bar, x0, learn_rate, 1e4, batch_size=batch_size, tolerance=1e-06 )
+    
+    r = Pseudo_Inverse2(A, b)
+    print("||x_hat-r|| = {}".format(np.linalg.norm(r-x_hat)))
+    # Visualisation process
+    fig = plt.figure()
+    axs1 = fig.add_subplot(2,3,1)
+    axs2 = fig.add_subplot(2,3,2)
+    axs3 = fig.add_subplot(2,3,3)
+    axs4 = fig.add_subplot(2,3,(4,6))
+    axs1.plot(np.array(error_array), 'go-', markersize = 3)
+    axs2.plot(np.array(diff_array), 'o-', markersize = 3)
+    axs3.plot(np.array(objective_array),'yo-', markersize = 3)
+    axs4.plot(x_bar,'go-',markersize = 3, label='ground-truth')
+    axs4.plot(r,'co-',markersize = 5, label='pseudo inverse')
+    axs4.plot(x_hat,'ro-',markersize = 3, label = 'SGD')
+    axs4.legend()
+    axs1.grid(); axs2.grid(); axs3.grid(); axs4.grid();
+    axs1.set_xlabel("Iterations"); axs2.set_xlabel("Iterations"); axs3.set_xlabel("Iterations"); axs4.set_xlabel("Samples")
+    axs1.set_ylabel("Cost error"); axs2.set_ylabel("Step length"); axs3.set_ylabel("Objective value"); axs4.set_ylabel("Parameter values")
+    axs1.set_title("$\||x^k-\\bar{x}\||$"); axs2.set_title("Step length over iterations"); axs3.set_title("Objective value over iterations"); 
+    fig.suptitle("learning rate = {}, n = {}, batch size = {}".format(learn_rate, A.shape[1], batch_size))
+    fig.set_size_inches(15, 8)
+    plt.show()
+    
+    
     print("||x_hat-x_bar|| = {}".format(np.linalg.norm(x_bar-x_hat)))
     
 # Result of Pseudo Inverse
-r = Pseudo_Inverse(A, b)
-print("||x_hat - r|| = {}".format(np.linalg.norm(x_hat-r)))
+#r = Pseudo_Inverse2(A, b)
+#print("||x_hat - r|| = {}".format(np.linalg.norm(x_hat-r)))

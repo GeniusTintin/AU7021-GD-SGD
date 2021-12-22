@@ -123,6 +123,10 @@ def Pseudo_Inverse(A, b):
     x_hat = np.matmul(np.matmul(np.linalg.inv(np.matmul(A.transpose(),A)), A.transpose()), b)
     return x_hat
 
+def Pseudo_Inverse2(A,b):
+    xhat = np.matmul(A.transpose(),np.matmul(np.linalg.inv(np.matmul(A,A.transpose())),b))
+    return xhat
+
 # Generate true answer 
 mu, sigma = 0, 1
 #n_seq, m = [50, 300, 500, 1000, 2000], 200
@@ -141,15 +145,19 @@ for n in n_seq:
     b += np.random.normal(0, sigma2, m)
 
     # initialise vector
-    #x0 = 10 * np.ones((n,))
+    x0 = 0 * np.ones((n,))
     # Random init
-    x0 = np.random.normal(mu, sigma, size = (n,))
+    #x0 = np.random.normal(mu, sigma, size = (n,))
     #print(x0)
 
     # Use Stochastic Gradient Descent to calculate x_hat
     x_hat = SGD(LS_Gradient, A, b, x_bar, x0, 0.0005, 1e4, batch_size=20, tolerance=1e-06 )
+    
+    r = Pseudo_Inverse2(A, b)
     print("||x_hat-x_bar|| = {}".format(np.linalg.norm(x_bar-x_hat)))
     
+    
+    
 # Result of Pseudo Inverse
-r = Pseudo_Inverse(A, b)
+r = Pseudo_Inverse2(A, b)
 print("||x_hat - r|| = {}".format(np.linalg.norm(x_hat-r)))
